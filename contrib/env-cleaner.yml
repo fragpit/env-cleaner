@@ -1,0 +1,85 @@
+# URL of the API.
+api_url: "http://localhost:8080"
+
+# API Authorization key.
+admin_api_key: ""
+
+# Don't actually delete resources, just log what would be deleted.
+dry_run: true
+
+# Default TTL for resources, if not specified in metadata
+default_ttl: 2w
+
+# Service will prefer SQLite if it is configured, otherwise PostgreSQL.
+sqlite:
+  database_folder: ""
+
+# PostgreSQL parameters.
+postgresql:
+  host: ""
+  port: 5432
+  username: ""
+  password: ""
+  database: ""
+
+# Maximum extend duration that can be set by the user.
+max_extend_duration: 2w
+
+# Send orphaned resources report. When crawler finds resources without
+# annotation, it will send a report to the configured notification endpoint.
+orphans_report: true
+
+# Poll interval for the crawler.
+crawl_interval: 12h
+
+# Delete interval.
+delete_interval: 12h
+
+# Stale threshold.
+stale_threshold: 3d
+
+# Notification endpoint configuration.
+notifications:
+  # Send all notifications to admin instead of owner.
+  admin_only: true
+  slack:
+    enabled: true
+    webhook_url: ""
+    sender_name: ""
+    admin_channel: ""
+  email:
+    enabled: false
+    smtp_server_address: ""
+    smtp_server_port: 25
+    username: ""
+    password: ""
+    sender_email: ""
+    admin_email: ""
+
+environments:
+  helm:
+    enabled: false
+    delete_release_namespace: false
+    velero_backup:
+      enabled: false
+      namespace: "velero"
+      ttl: 2w
+    whitelist_releases_regex: []
+    blacklist_namespaces: []
+  vsphere_vm:
+    enabled: false
+    quarantine_folder_id: ""
+    quarantine_postfix: ""
+    watch_folders: []
+    blacklist_vms: []
+
+connectors:
+  k8s:
+    insecure: true
+    kubeconfig: ""
+  vsphere:
+    insecure: true
+    hostname: ""
+    username: ""
+    password: ""
+    datacenter: ""

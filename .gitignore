@@ -15,7 +15,7 @@
 *.out
 
 # Dependency directories (remove the comment below to include it)
-# vendor/
+vendor/
 
 # Go workspace file
 go.work
@@ -23,3 +23,24 @@ go.work.sum
 
 # env file
 .env
+
+env.db
+tmp/
+__debug_bin*
+
+.idea/
+.vscode/
+.mirrord/
+.cache/
+_vendor-*
+bin/
+.cursorignore
+
+# Python
+__pycache__/
+*.py[cod]
+venv
+.venv
+.tox
+
+.DS_Store
