@@ -37,7 +37,7 @@ func New(
 	}
 }
 
-func (a *API) Run(ctx context.Context) {
+func (a *API) Run(ctx context.Context) error {
 	log.Info("Starting API")
 
 	r := chi.NewRouter()
@@ -58,21 +58,35 @@ func (a *API) Run(ctx context.Context) {
 		WriteTimeout: 60 * time.Second,
 	}
 
+	errChan := make(chan error, 1)
 	go func() {
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Error("Failed to start server")
+			log.Errorf("failed to start server: %v", err)
+			errChan <- fmt.Errorf("failed to start server: %w", err)
 		}
 	}()
 
-	<-ctx.Done()
-	ctx, cancel := context.WithTimeout(ctx, apiShutdownTimeout)
-	defer cancel()
+	select {
+	case <-ctx.Done():
+		log.Info("Received shutdown signal, shutting down API service")
+		ctx, cancel := context.WithTimeout(ctx, apiShutdownTimeout)
+		defer cancel()
 
-	if err := srv.Shutdown(ctx); err != nil {
-		log.Error("Failed to shutdown API service gracefully")
+		if err := srv.Shutdown(ctx); err != nil {
+			log.Errorf("Failed to shutdown API service gracefully: %v", err)
+			return fmt.Errorf("failed to shutdown API service gracefully: %w", err)
+		}
+
+		log.Info("API service shut down")
+		return nil
+	case err := <-errChan:
+		if err != nil {
+			log.Errorf("API service encountered an error: %v", err)
+			return err
+		}
 	}
 
-	log.Info("API service shut down")
+	return nil
 }
 
 func (a *API) extendFunc(w http.ResponseWriter, r *http.Request) {
