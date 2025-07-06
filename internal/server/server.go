@@ -177,7 +177,10 @@ func Run() error {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		a.Run(ctx)
+		if err := a.Run(ctx); err != nil {
+			log.Errorf("shutdown env-cleaner, error running API: %v", err)
+			cancel()
+		}
 	}()
 
 	wg.Wait()
