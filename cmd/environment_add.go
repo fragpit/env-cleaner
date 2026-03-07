@@ -134,7 +134,7 @@ func Add(_ *cobra.Command, _ []string) error {
 
 	fmt.Printf(
 		"Environment: %s id: %s type: %s added successfully",
-		setName(&environment),
+		environment.DisplayName(),
 		environment.EnvID,
 		environment.Type,
 	)

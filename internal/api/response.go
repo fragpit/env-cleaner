@@ -2,9 +2,12 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 
 	log "github.com/sirupsen/logrus"
+
+	"github.com/fragpit/env-cleaner/internal/model"
 )
 
 type Response struct {
@@ -51,5 +54,32 @@ func sendErrorResponse(w http.ResponseWriter, statusCode int, message string) {
 
 	if err := json.NewEncoder(w).Encode(response); err != nil {
 		log.Errorf("error encoding JSON response: %v", err)
+	}
+}
+
+func handleServiceError(
+	w http.ResponseWriter, err error, subject string,
+) {
+	var ve *model.ValidationError
+	var nf *model.NotFoundError
+	var ce *model.ConflictError
+
+	switch {
+	case errors.As(err, &ve):
+		log.Errorf("Validation error [%s]: %v", subject, err)
+		sendErrorResponse(w, http.StatusBadRequest, ve.Msg)
+	case errors.As(err, &nf):
+		log.Errorf("Not found [%s]: %v", subject, err)
+		sendErrorResponse(w, http.StatusNotFound, nf.Msg)
+	case errors.As(err, &ce):
+		log.Warnf("Conflict [%s]: %v", subject, err)
+		sendErrorResponse(w, http.StatusConflict, ce.Msg)
+	default:
+		log.Errorf("Internal error [%s]: %v", subject, err)
+		sendErrorResponse(
+			w,
+			http.StatusInternalServerError,
+			"internal server error",
+		)
 	}
 }

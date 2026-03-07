@@ -1,6 +1,9 @@
 package model
 
-import "context"
+import (
+	"context"
+	"fmt"
+)
 
 type Environment struct {
 	EnvID       string
@@ -10,6 +13,15 @@ type Environment struct {
 	Owner       string
 	DeleteAt    string
 	DeleteAtSec int64
+}
+
+func (e *Environment) DisplayName() string {
+	if e.Namespace != "" {
+		return fmt.Sprintf(
+			"%s (namespace: %s)", e.Name, e.Namespace,
+		)
+	}
+	return e.Name
 }
 
 type Repository interface {
@@ -26,10 +38,4 @@ type EnvRepository interface {
 	GetOutdatedEnvironments(ctx context.Context) ([]*Environment, error)
 	ExtendEnvironment(ctx context.Context, id, period string) error
 	DeleteEnvironment(ctx context.Context, id string) error
-}
-
-type Notificator interface {
-	SendOrphanMessage(env *Environment) error
-	SendStaleMessage(env *Environment, tk *Token) error
-	SendDeleteMessage(env *Environment) error
 }

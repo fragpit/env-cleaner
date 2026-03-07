@@ -128,7 +128,7 @@ func (s *Storage) WriteEnvironments(
 
 			log.Infof(
 				"New environment added: %s, type: %s, id: %s",
-				setName(&e),
+				e.DisplayName(),
 				e.Type,
 				e.EnvID,
 			)
@@ -343,14 +343,6 @@ func (s *Storage) Close() error {
 	return s.DB.Close()
 }
 
-func setName(env *model.Environment) string {
-	name := env.Name
-	if env.Namespace != "" {
-		name = fmt.Sprintf("%s (namespace: %s)", env.Name, env.Namespace)
-	}
-
-	return name
-}
 
 func (s *Storage) getEnvironments(
 	ctx context.Context,

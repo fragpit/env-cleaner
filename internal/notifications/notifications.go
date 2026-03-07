@@ -88,7 +88,7 @@ var deleteMessage = `
 `
 
 func (nt *Notificator) SendOrphanMessage(env *model.Environment) error {
-	name := setNamespacedName(env)
+	name := env.DisplayName()
 	log.Infof("Sending orphaned message for environment %s, type: %s", name, env.Type)
 
 	if nt.SlackConfig.Enabled {
@@ -118,7 +118,7 @@ func (nt *Notificator) SendOrphanMessage(env *model.Environment) error {
 }
 
 func (nt *Notificator) SendStaleMessage(env *model.Environment, tk *model.Token) error {
-	name := setNamespacedName(env)
+	name := env.DisplayName()
 	log.Infof(
 		"Sending stale message for environment %s, type: %s, id: %s",
 		name, env.Type, env.EnvID,
@@ -167,7 +167,7 @@ func (nt *Notificator) SendStaleMessage(env *model.Environment, tk *model.Token)
 }
 
 func (nt *Notificator) SendDeleteMessage(env *model.Environment) error {
-	name := setNamespacedName(env)
+	name := env.DisplayName()
 	log.Infof(
 		"Sending delete message for environment %s, type: %s, id: %s",
 		name, env.Type, env.EnvID,
@@ -205,14 +205,6 @@ func (nt *Notificator) SendDeleteMessage(env *model.Environment) error {
 	return nil
 }
 
-func setNamespacedName(env *model.Environment) string {
-	name := env.Name
-	if env.Namespace != "" {
-		name = fmt.Sprintf("%s (namespace: %s)", env.Name, env.Namespace)
-	}
-
-	return name
-}
 
 func setExtendPeriods(staleThreshold, maxExtendDuration string) (map[string]string, error) {
 	maxDuration, err := str2duration.ParseDuration(maxExtendDuration)
