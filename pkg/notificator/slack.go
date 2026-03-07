@@ -48,7 +48,7 @@ func (nt *SlackNotificator) Send(msg *SlackMessage) error {
 	if err != nil {
 		return fmt.Errorf("error sending slack notification: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	return nil
 }

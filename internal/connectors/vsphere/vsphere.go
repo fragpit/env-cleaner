@@ -164,7 +164,7 @@ func (vc *Connector) GetEnvironments(
 		}
 
 		env = append(env, model.Environment{
-			EnvID:       vm.ManagedEntity.ExtensibleManagedObject.Self.Value,
+			EnvID:       vm.Self.Value,
 			Type:        connectorType,
 			Name:        vm.Name,
 			Namespace:   "",
@@ -306,7 +306,7 @@ func (vc *Connector) searchVMbyName(
 	finder.SetDatacenter(dc)
 
 	m := view.NewManager(vc.Client.Client)
-	root := vc.Client.Client.ServiceContent.RootFolder
+	root := vc.Client.ServiceContent.RootFolder
 	v, err := m.CreateContainerView(ctx, root, []string{"VirtualMachine"}, true)
 	if err != nil {
 		return "", fmt.Errorf("error finding vm: %w", err)

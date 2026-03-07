@@ -40,7 +40,7 @@ func New(dbFolder string) (_ *Storage, err error) {
 		if err != nil {
 			return nil, err
 		}
-		file.Close()
+		_ = file.Close()
 	}
 
 	db, err := sql.Open("sqlite3", dbPath)
@@ -119,7 +119,7 @@ func (s *Storage) WriteEnvironments(
 		if err != nil {
 			return err
 		}
-		defer stmt.Close()
+		defer func() { _ = stmt.Close() }()
 
 		for _, e := range envs {
 			if env, _ := s.GetEnvByID(ctx, e.EnvID); env != nil {
@@ -212,7 +212,7 @@ func (s *Storage) ExtendEnvironment(
 		if err != nil {
 			return err
 		}
-		defer stmt.Close()
+		defer func() { _ = stmt.Close() }()
 
 		if _, err = stmt.Exec(env.DeleteAt, env.DeleteAtSec, id); err != nil {
 			return err
@@ -230,7 +230,7 @@ func (s *Storage) DeleteEnvironment(ctx context.Context, id string) error {
 		if err != nil {
 			return err
 		}
-		defer stmt.Close()
+		defer func() { _ = stmt.Close() }()
 
 		if _, err = stmt.Exec(id); err != nil {
 			return err
@@ -257,7 +257,7 @@ func (s *Storage) SetToken(
 		if err != nil {
 			return err
 		}
-		defer stmt.Close()
+		defer func() { _ = stmt.Close() }()
 
 		if _, err = stmt.Exec(id, token); err != nil {
 			return err
@@ -304,7 +304,7 @@ func (s *Storage) DeleteToken(ctx context.Context, id string) error {
 		if err != nil {
 			return err
 		}
-		defer stmt.Close()
+		defer func() { _ = stmt.Close() }()
 
 		if _, err = stmt.Exec(id); err != nil {
 			return err
@@ -361,7 +361,7 @@ func (s *Storage) getEnvironments(
 	if err != nil {
 		return nil, fmt.Errorf("get outdated environments error: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var envs []*model.Environment
 	for rows.Next() {
