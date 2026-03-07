@@ -1,0 +1,71 @@
+version: "3"
+
+vars:
+  BUILD_DIR: "{{.ROOT_DIR}}/bin"
+  BUILD_VERSION:
+    sh: git describe --tags --exact-match 2>/dev/null || git rev-parse --short=8 HEAD
+  DOCKER_REGISTRY: '{{.DOCKER_REGISTRY | default "example-registry.com"}}'
+  DOCKER_REGISTRY_REPO: '{{.DOCKER_REGISTRY_REPO | default "example-repo"}}'
+  DOCKER_APPLICATION: env-cleaner
+  DOCKER_IMAGE: "{{.DOCKER_REGISTRY_REPO}}/{{.DOCKER_APPLICATION}}"
+  DOCKER_VERSION_TAG:
+    sh: echo "{{.BUILD_VERSION}}" | tr "+" "_"
+  DOCKER_VERSIONED_IMAGE: "{{.DOCKER_IMAGE}}:{{.DOCKER_VERSION_TAG}}"
+  REGISTRY_LATEST_IMAGE: "{{.DOCKER_REGISTRY}}/{{.DOCKER_IMAGE}}:latest"
+  IMPORT_PATH: github.com/fragpit/env-cleaner
+  LINKER_ARGS: "-s -X {{.IMPORT_PATH}}/cmd.version={{.BUILD_VERSION}}"
+
+tasks:
+  build:
+    desc: Build binaries
+    cmds:
+      - mkdir -p {{.BUILD_DIR}}
+      - go build -o {{.BUILD_DIR}}/{{.DOCKER_APPLICATION}} -ldflags "{{.LINKER_ARGS}}"
+
+  lint:
+    desc: Lint code
+    cmds:
+      - go version
+      - golangci-lint version
+      - golangci-lint run --max-same-issues 0 --max-issues-per-linter 0 --timeout 5m --verbose
+
+  test:
+    desc: Run tests
+    cmds:
+      - go test ./... -v -race
+
+  image-build:
+    desc: Build container images
+    cmds:
+      - docker build --progress=plain --file "{{.ROOT_DIR}}/Dockerfile" --tag "{{.DOCKER_VERSIONED_IMAGE}}" "{{.ROOT_DIR}}"
+      - docker tag "{{.DOCKER_VERSIONED_IMAGE}}" "{{.DOCKER_IMAGE}}:latest"
+
+  image-clean:
+    desc: Remove last version of the images
+    cmds:
+      - docker rmi -f "$(docker images -q {{.DOCKER_VERSIONED_IMAGE}})"
+      - docker image prune -f --filter label=stage=env-cleaner-{{.BUILD_VERSION}}
+
+  image-tag:
+    desc: Tag images
+    vars:
+      GIT_BRANCH:
+        sh: git rev-parse --abbrev-ref HEAD
+    cmds:
+      - docker tag "{{.DOCKER_VERSIONED_IMAGE}}" "{{.DOCKER_REGISTRY}}/{{.DOCKER_VERSIONED_IMAGE}}"
+      - cmd: docker tag "{{.DOCKER_VERSIONED_IMAGE}}" "{{.REGISTRY_LATEST_IMAGE}}"
+        condition: '[ "{{.GIT_BRANCH}}" = "master" ] || [ "$CI_COMMIT_REF_NAME" = "master" ]'
+
+  image-push:
+    desc: Push images to registry
+    deps: [image-tag]
+    vars:
+      GIT_BRANCH:
+        sh: git rev-parse --abbrev-ref HEAD
+    cmds:
+      - docker push "{{.DOCKER_REGISTRY}}/{{.DOCKER_VERSIONED_IMAGE}}"
+      - echo "{{.DOCKER_REGISTRY}}/{{.DOCKER_VERSIONED_IMAGE}}" > published_images.txt
+      - cmd: docker push "{{.REGISTRY_LATEST_IMAGE}}"
+        condition: '[ "{{.GIT_BRANCH}}" = "master" ] || [ "$CI_COMMIT_REF_NAME" = "master" ]'
+      - cmd: echo "{{.REGISTRY_LATEST_IMAGE}}" >> published_images.txt
+        condition: '[ "{{.GIT_BRANCH}}" = "master" ] || [ "$CI_COMMIT_REF_NAME" = "master" ]'

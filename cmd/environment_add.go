@@ -107,7 +107,7 @@ func Add(_ *cobra.Command, _ []string) error {
 	if err != nil {
 		return fmt.Errorf("error sending request: %w", err)
 	}
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 
 	var resp api.Response
 	if err := json.NewDecoder(res.Body).Decode(&resp); err != nil {

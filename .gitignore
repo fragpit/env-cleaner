@@ -44,3 +44,8 @@ venv
 .tox
 
 .DS_Store
+
+# Claude local settings
+.claude/settings.local.json
+.claude/todos/
+.mcp.json

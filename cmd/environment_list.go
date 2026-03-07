@@ -54,7 +54,7 @@ func List() error {
 	if err != nil {
 		return fmt.Errorf("error sending request: %w", err)
 	}
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 
 	var resp api.Response
 	if err := json.NewDecoder(res.Body).Decode(&resp); err != nil {
@@ -81,12 +81,12 @@ func List() error {
 	}
 
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-	fmt.Fprintln(w, "Owner\tID\tName\tType\tDeleteAt")
+	_, _ = fmt.Fprintln(w, "Owner\tID\tName\tType\tDeleteAt")
 	for _, env := range environments {
-		fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\n",
+		_, _ = fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\n",
 			env.Owner, env.EnvID, setName(&env), env.Type, env.DeleteAt)
 	}
-	w.Flush()
+	_ = w.Flush()
 
 	return nil
 }

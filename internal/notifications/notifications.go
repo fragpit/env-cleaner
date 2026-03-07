@@ -94,7 +94,7 @@ func (nt *Notificator) SendOrphanMessage(env *model.Environment) error {
 	if nt.SlackConfig.Enabled {
 		slackChannel := nt.AdminChannel
 		msg, err := notificator.NewSlackMessage(
-			nt.SlackConfig.SenderName,
+			nt.SenderName,
 			slackChannel,
 			fmt.Sprintf(
 				orphanMessage,
@@ -135,7 +135,7 @@ func (nt *Notificator) SendStaleMessage(env *model.Environment, tk *model.Token)
 			return fmt.Errorf("error setting stale periods: %w", err)
 		}
 		msg, err := notificator.NewSlackMessage(
-			nt.SlackConfig.SenderName,
+			nt.SenderName,
 			slackChannel,
 			fmt.Sprintf(staleMessage,
 				name,
@@ -180,7 +180,7 @@ func (nt *Notificator) SendDeleteMessage(env *model.Environment) error {
 		}
 
 		msg, err := notificator.NewSlackMessage(
-			nt.SlackConfig.SenderName,
+			nt.SenderName,
 			slackChannel,
 			fmt.Sprintf(
 				deleteMessage,
