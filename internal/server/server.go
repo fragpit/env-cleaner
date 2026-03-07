@@ -14,6 +14,7 @@ import (
 	"github.com/fragpit/env-cleaner/internal/connectors/vsphere"
 	"github.com/fragpit/env-cleaner/internal/model"
 	"github.com/fragpit/env-cleaner/internal/notifications"
+	"github.com/fragpit/env-cleaner/internal/service"
 	"github.com/fragpit/env-cleaner/internal/storage/postgresql"
 	"github.com/fragpit/env-cleaner/internal/storage/sqlite"
 )
@@ -124,7 +125,7 @@ func Run() error {
 			return err
 		}
 
-		vsCr := model.NewCrawler(cfg.CrawlInterval, vsConn, st)
+		vsCr := service.NewCrawler(cfg.CrawlInterval, vsConn, st)
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
@@ -146,7 +147,7 @@ func Run() error {
 			return err
 		}
 
-		helmCr := model.NewCrawler(cfg.CrawlInterval, helmConn, st)
+		helmCr := service.NewCrawler(cfg.CrawlInterval, helmConn, st)
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
@@ -156,9 +157,9 @@ func Run() error {
 		enabledConnectors["helm"] = helmConn
 	}
 
-	factory := &model.ConnectorList{Connectors: enabledConnectors}
-	deleter := model.NewDeleter(
-		model.DeleterConfig{
+	factory := &service.ConnectorList{Connectors: enabledConnectors}
+	deleter := service.NewDeleter(
+		service.DeleterConfig{
 			DeleteInterval: cfg.DeleteInterval,
 			StaleThreshold: cfg.StaleThreshold,
 			DryRun:         cfg.DryRun,
@@ -173,7 +174,8 @@ func Run() error {
 		deleter.Run(ctx)
 	}()
 
-	a := api.New(cfg, factory, st)
+	svc := service.NewEnvironmentService(st, factory, cfg.MaxExtendDuration)
+	a := api.New(cfg, svc)
 	wg.Add(1)
 	go func() {
 		defer wg.Done()

@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"fmt"
 	"os"
 	"strings"
 
@@ -10,7 +9,6 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/fragpit/env-cleaner/internal/config"
-	"github.com/fragpit/env-cleaner/internal/model"
 )
 
 var cfgFile string
@@ -112,11 +110,3 @@ func initConfig() {
 	}
 }
 
-func setName(env *model.Environment) string {
-	name := env.Name
-	if env.Namespace != "" {
-		name = fmt.Sprintf("%s (namespace: %s)", env.Name, env.Namespace)
-	}
-
-	return name
-}

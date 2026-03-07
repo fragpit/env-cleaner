@@ -1,10 +1,12 @@
-package model
+package service
 
 import (
 	"context"
 	"time"
 
 	log "github.com/sirupsen/logrus"
+
+	"github.com/fragpit/env-cleaner/internal/model"
 )
 
 const (
@@ -13,11 +15,15 @@ const (
 
 type Crawler struct {
 	CrawlInterval string
-	Connector     Connector
-	Repository    Repository
+	Connector     model.Connector
+	Repository    model.Repository
 }
 
-func NewCrawler(crawlInt string, conn Connector, repo Repository) *Crawler {
+func NewCrawler(
+	crawlInt string,
+	conn model.Connector,
+	repo model.Repository,
+) *Crawler {
 	return &Crawler{
 		CrawlInterval: crawlInt,
 		Connector:     conn,
@@ -67,9 +73,14 @@ func runPeriodically(
 }
 
 func startCrawler(ctx context.Context, c *Crawler) {
-	log.Infof("Crawler task started, type=%s", c.Connector.GetConnectorType())
+	log.Infof(
+		"Crawler task started, type=%s",
+		c.Connector.GetConnectorType(),
+	)
 
-	ctx, cancel := context.WithTimeout(ctx, crawlerOperationTimeout)
+	ctx, cancel := context.WithTimeout(
+		ctx, crawlerOperationTimeout,
+	)
 	defer cancel()
 
 	envs, err := c.Connector.GetEnvironments(ctx)
@@ -80,11 +91,16 @@ func startCrawler(ctx context.Context, c *Crawler) {
 
 	if envs != nil {
 		log.Info("Writing environments to database")
-		if err := c.Repository.WriteEnvironments(ctx, envs); err != nil {
+		if err := c.Repository.WriteEnvironments(
+			ctx, envs,
+		); err != nil {
 			log.Errorf("Error writing to DB: %v", err)
 			return
 		}
 	}
 
-	log.Infof("Crawler task finished, type=%s", c.Connector.GetConnectorType())
+	log.Infof(
+		"Crawler task finished, type=%s",
+		c.Connector.GetConnectorType(),
+	)
 }

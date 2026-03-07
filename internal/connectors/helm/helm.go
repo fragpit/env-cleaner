@@ -330,12 +330,12 @@ func (h *Connector) scaleAndBackup(
 
 	deployments, err := deploymentsClient.List(ctx, metav1.ListOptions{})
 	if err != nil {
-		panic(err.Error())
+		return err
 	}
 
 	sts, err := statefulSetClient.List(ctx, metav1.ListOptions{})
 	if err != nil {
-		panic(err.Error())
+		return err
 	}
 
 	for i := range deployments.Items {
