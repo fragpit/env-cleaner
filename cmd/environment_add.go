@@ -15,7 +15,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/fragpit/env-cleaner/internal/api"
-	"github.com/fragpit/env-cleaner/internal/model"
 )
 
 var (
@@ -53,25 +52,25 @@ func init() {
 
 	if err := addCmd.MarkFlagRequired("name"); err != nil {
 		slog.Error("error", slog.Any("error", err))
-			os.Exit(1)
+		os.Exit(1)
 	}
 	if err := addCmd.MarkFlagRequired("owner"); err != nil {
 		slog.Error("error", slog.Any("error", err))
-			os.Exit(1)
+		os.Exit(1)
 	}
 	if err := addCmd.MarkFlagRequired("type"); err != nil {
 		slog.Error("error", slog.Any("error", err))
-			os.Exit(1)
+		os.Exit(1)
 	}
 	if err := addCmd.MarkFlagRequired("ttl"); err != nil {
 		slog.Error("error", slog.Any("error", err))
-			os.Exit(1)
+		os.Exit(1)
 	}
 }
 
 // TODO: rework empty params
 func Add(_ *cobra.Command, _ []string) error {
-	env := api.Environment{
+	env := api.EnvironmentRequest{
 		Name:      envName,
 		Namespace: envNamespace,
 		Owner:     envOwner,
@@ -129,21 +128,21 @@ func Add(_ *cobra.Command, _ []string) error {
 		)
 	}
 
-	var environment model.Environment
+	var envResp api.EnvironmentResponse
 	data, err := json.Marshal(resp.Data)
 	if err != nil {
 		return fmt.Errorf("error decoding response: %w", err)
 	}
 
-	if err := json.Unmarshal(data, &environment); err != nil {
+	if err := json.Unmarshal(data, &envResp); err != nil {
 		return fmt.Errorf("error decoding response: %w", err)
 	}
 
 	fmt.Printf(
 		"Environment: %s id: %s type: %s added successfully",
-		environment.DisplayName(),
-		environment.EnvID,
-		environment.Type,
+		envResp.Name,
+		envResp.EnvID,
+		envResp.Type,
 	)
 
 	return nil

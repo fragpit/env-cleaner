@@ -15,7 +15,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/fragpit/env-cleaner/internal/api"
-	"github.com/fragpit/env-cleaner/internal/model"
 )
 
 var listCmd = &cobra.Command{
@@ -71,7 +70,7 @@ func List() error {
 		)
 	}
 
-	var environments []model.Environment
+	var environments []api.EnvironmentResponse
 
 	data, err := json.Marshal(resp.Data)
 	if err != nil {
@@ -86,7 +85,7 @@ func List() error {
 	_, _ = fmt.Fprintln(w, "Owner\tID\tName\tType\tDeleteAt")
 	for _, env := range environments {
 		_, _ = fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\n",
-			env.Owner, env.EnvID, env.DisplayName(), env.Type, env.DeleteAt)
+			env.Owner, env.EnvID, env.Name, env.Type, env.DeleteAt)
 	}
 	_ = w.Flush()
 
