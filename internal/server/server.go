@@ -2,11 +2,10 @@ package server
 
 import (
 	"context"
+	"log/slog"
 	"os/signal"
 	"sync"
 	"syscall"
-
-	log "github.com/sirupsen/logrus"
 
 	"github.com/fragpit/env-cleaner/internal/api"
 	"github.com/fragpit/env-cleaner/internal/config"
@@ -25,7 +24,7 @@ func Run() error {
 
 	cfg, err := config.NewServerConfig()
 	if err != nil {
-		log.Errorf("Error reading configuration: %v", err)
+		slog.Error("error reading configuration", slog.Any("error", err))
 		return err
 	}
 
@@ -40,9 +39,8 @@ func Run() error {
 	if cfg.SQLite.DatabaseFolder != "" {
 		st, err = sqlite.New(cfg.SQLite.DatabaseFolder)
 		if err == nil {
-			log.Infof(
-				"Successfully connected to SQLite database, folder: %s",
-				cfg.SQLite.DatabaseFolder,
+			slog.Info("successfully connected to SQLite database",
+				slog.String("folder", cfg.SQLite.DatabaseFolder),
 			)
 		}
 	} else if cfg.Postgresql.Host != "" {
@@ -54,27 +52,26 @@ func Run() error {
 			cfg.Postgresql.Database,
 		)
 		if err == nil {
-			log.Infof(
-				"Successfully connected to PostgreSQL database, server: %s:%d, database: %s",
-				cfg.Postgresql.Host,
-				cfg.Postgresql.Port,
-				cfg.Postgresql.Database,
+			slog.Info("successfully connected to PostgreSQL database",
+				slog.String("host", cfg.Postgresql.Host),
+				slog.Int("port", cfg.Postgresql.Port),
+				slog.String("database", cfg.Postgresql.Database),
 			)
 		}
 	}
 	if err != nil {
-		log.Errorf("Error creating storage: %v", err)
+		slog.Error("error creating storage", slog.Any("error", err))
 		return err
 	}
 
 	if st == nil {
-		log.Errorf("Check storage configuration settings")
+		slog.Error("check storage configuration settings")
 		return err
 	}
 
 	defer func() {
 		if err := st.Close(); err != nil {
-			log.Errorf("Error closing storage: %v", err)
+			slog.Error("error closing storage", slog.Any("error", err))
 		}
 	}()
 
@@ -101,15 +98,13 @@ func Run() error {
 	)
 
 	if cfg.DryRun {
-		log.Warn("Dry run mode is enabled")
+		slog.Warn("dry run mode is enabled")
 	}
 
 	enabledConnectors := make(map[string]model.Connector)
 
 	if !cfg.Environments.VSphereVM.Enabled && !cfg.Environments.Helm.Enabled {
-		log.Errorf(
-			"Check environments configuration settings: no connectors enabled",
-		)
+		slog.Error("check environments configuration settings: no connectors enabled")
 		return err
 	}
 
@@ -121,7 +116,7 @@ func Run() error {
 
 		vsConn, err := vsphere.New(ctx, &vsConfig, nt)
 		if err != nil {
-			log.Errorf("Error creating vSphere connector: %v", err)
+			slog.Error("error creating vSphere connector", slog.Any("error", err))
 			return err
 		}
 
@@ -143,7 +138,7 @@ func Run() error {
 
 		helmConn, err := helm.New(&helmConfig, nt)
 		if err != nil {
-			log.Errorf("Error creating Helm connector: %v", err)
+			slog.Error("error creating Helm connector", slog.Any("error", err))
 			return err
 		}
 
@@ -180,13 +175,13 @@ func Run() error {
 	go func() {
 		defer wg.Done()
 		if err := a.Run(ctx); err != nil {
-			log.Errorf("shutdown env-cleaner, error running API: %v", err)
+			slog.Error("shutdown env-cleaner, error running API", slog.Any("error", err))
 			cancel()
 		}
 	}()
 
 	wg.Wait()
 
-	log.Info("Env-cleaner shut down gracefully")
+	slog.Info("env-cleaner shut down gracefully")
 	return nil
 }

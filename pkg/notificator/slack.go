@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"net/http"
 
-	log "github.com/sirupsen/logrus"
+	"log/slog"
 )
 
 type SlackNotificator struct {
@@ -37,7 +37,7 @@ func NewSlackMessage(senderName, channel, text string) (*SlackMessage, error) {
 }
 
 func (nt *SlackNotificator) Send(msg *SlackMessage) error {
-	log.Debugf("Sending slack notification to user: %s", msg.Channel)
+	slog.Debug("sending slack notification", slog.String("channel", msg.Channel))
 
 	body, err := json.Marshal(msg)
 	if err != nil {

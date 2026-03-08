@@ -10,7 +10,8 @@ import (
 	"path"
 	"text/tabwriter"
 
-	log "github.com/sirupsen/logrus"
+	"log/slog"
+
 	"github.com/spf13/cobra"
 
 	"github.com/fragpit/env-cleaner/internal/api"
@@ -24,7 +25,8 @@ var listCmd = &cobra.Command{
 	Long:    `List environments`,
 	Run: func(cmd *cobra.Command, args []string) { //nolint:revive
 		if err := List(); err != nil {
-			log.Fatalf("Error: %v", err)
+			slog.Error("error", slog.Any("error", err))
+			os.Exit(1)
 		}
 	},
 }

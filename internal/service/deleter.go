@@ -3,9 +3,9 @@ package service
 import (
 	"context"
 	"fmt"
+	"log/slog"
+	"os"
 	"time"
-
-	log "github.com/sirupsen/logrus"
 
 	"github.com/fragpit/env-cleaner/internal/model"
 )
@@ -42,9 +42,8 @@ func NewDeleter(
 }
 
 func (d *Deleter) Run(ctx context.Context) {
-	log.Infof(
-		"Deleter service started, interval=%s",
-		d.config.DeleteInterval,
+	slog.Info("deleter service started",
+		slog.String("interval", d.config.DeleteInterval),
 	)
 	runDeleterPeriodically(ctx, startDeleter, d)
 }
@@ -58,7 +57,8 @@ func runDeleterPeriodically(
 		d.config.DeleteInterval,
 	)
 	if err != nil {
-		log.Fatalf("Error parsing duration: %v", err)
+		slog.Error("error parsing duration", slog.Any("error", err))
+		os.Exit(1)
 	}
 
 	f(ctx, d)
@@ -73,14 +73,14 @@ func runDeleterPeriodically(
 			}
 			f(ctx, d)
 		case <-ctx.Done():
-			log.Info("Deleter service shut down")
+			slog.Info("deleter service shut down")
 			return
 		}
 	}
 }
 
 func startDeleter(ctx context.Context, d *Deleter) {
-	log.Info("Deleter task started")
+	slog.Info("deleter task started")
 
 	ctx, cancel := context.WithTimeout(
 		ctx, deleterOperationTimeout,
@@ -89,28 +89,21 @@ func startDeleter(ctx context.Context, d *Deleter) {
 
 	envs, err := d.GetOutdatedEnvironments(ctx)
 	if err != nil {
-		log.Errorf(
-			"Error getting outdated environments: %v",
-			err,
-		)
+		slog.Error("error getting outdated environments", slog.Any("error", err))
 		return
 	}
 
 	for _, env := range envs {
 		connector, err := d.Factory.GetConnector(env.Type)
 		if err != nil {
-			log.Errorf(
-				"Error getting connector: %v", err,
-			)
+			slog.Error("error getting connector", slog.Any("error", err))
 			continue
 		}
 
 		if err := connector.CheckEnvironment(
 			ctx, env,
 		); err != nil {
-			log.Errorf(
-				"Error checking environment: %v", err,
-			)
+			slog.Error("error checking environment", slog.Any("error", err))
 			continue
 		}
 
@@ -118,20 +111,14 @@ func startDeleter(ctx context.Context, d *Deleter) {
 			if err := connector.DeleteEnvironment(
 				ctx, env,
 			); err != nil {
-				log.Errorf(
-					"Error deleting environment: %v",
-					err,
-				)
+				slog.Error("error deleting environment", slog.Any("error", err))
 				continue
 			}
 
 			if err := d.Repository.DeleteEnvironment(
 				ctx, env.EnvID,
 			); err != nil {
-				log.Errorf(
-					"Error deleting environment from DB: %v",
-					err,
-				)
+				slog.Error("error deleting environment from DB", slog.Any("error", err))
 				continue
 			}
 		}
@@ -139,14 +126,12 @@ func startDeleter(ctx context.Context, d *Deleter) {
 		if err := d.Notificator.SendDeleteMessage(
 			env,
 		); err != nil {
-			log.Errorf(
-				"Error sending delete message: %v", err,
-			)
+			slog.Error("error sending delete message", slog.Any("error", err))
 			continue
 		}
 	}
 
-	log.Info("Deleter task finished")
+	slog.Info("deleter task finished")
 }
 
 func (d *Deleter) GetStaleEnvironments(

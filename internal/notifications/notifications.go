@@ -2,8 +2,8 @@ package notifications
 
 import (
 	"fmt"
+	"log/slog"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/xhit/go-str2duration/v2"
 
 	"github.com/fragpit/env-cleaner/internal/model"
@@ -89,7 +89,10 @@ var deleteMessage = `
 
 func (nt *Notificator) SendOrphanMessage(env *model.Environment) error {
 	name := env.DisplayName()
-	log.Infof("Sending orphaned message for environment %s, type: %s", name, env.Type)
+	slog.Info("sending orphaned message",
+		slog.String("environment", name),
+		slog.String("type", env.Type),
+	)
 
 	if nt.SlackConfig.Enabled {
 		slackChannel := nt.AdminChannel
@@ -119,9 +122,10 @@ func (nt *Notificator) SendOrphanMessage(env *model.Environment) error {
 
 func (nt *Notificator) SendStaleMessage(env *model.Environment, tk *model.Token) error {
 	name := env.DisplayName()
-	log.Infof(
-		"Sending stale message for environment %s, type: %s, id: %s",
-		name, env.Type, env.EnvID,
+	slog.Info("sending stale message",
+		slog.String("environment", name),
+		slog.String("type", env.Type),
+		slog.String("id", env.EnvID),
 	)
 
 	if nt.SlackConfig.Enabled {
@@ -168,9 +172,10 @@ func (nt *Notificator) SendStaleMessage(env *model.Environment, tk *model.Token)
 
 func (nt *Notificator) SendDeleteMessage(env *model.Environment) error {
 	name := env.DisplayName()
-	log.Infof(
-		"Sending delete message for environment %s, type: %s, id: %s",
-		name, env.Type, env.EnvID,
+	slog.Info("sending delete message",
+		slog.String("environment", name),
+		slog.String("type", env.Type),
+		slog.String("id", env.EnvID),
 	)
 
 	if nt.SlackConfig.Enabled {
@@ -204,7 +209,6 @@ func (nt *Notificator) SendDeleteMessage(env *model.Environment) error {
 
 	return nil
 }
-
 
 func setExtendPeriods(staleThreshold, maxExtendDuration string) (map[string]string, error) {
 	maxDuration, err := str2duration.ParseDuration(maxExtendDuration)

@@ -2,9 +2,9 @@ package service
 
 import (
 	"context"
+	"log/slog"
+	"os"
 	"time"
-
-	log "github.com/sirupsen/logrus"
 
 	"github.com/fragpit/env-cleaner/internal/model"
 )
@@ -32,10 +32,9 @@ func NewCrawler(
 }
 
 func (c *Crawler) Run(ctx context.Context) {
-	log.Infof(
-		"Crawler service started, type=%s, interval=%s",
-		c.Connector.GetConnectorType(),
-		c.CrawlInterval,
+	slog.Info("crawler service started",
+		slog.String("type", c.Connector.GetConnectorType()),
+		slog.String("interval", c.CrawlInterval),
 	)
 	runPeriodically(ctx, startCrawler, c)
 }
@@ -47,7 +46,8 @@ func runPeriodically(
 ) {
 	interval, err := time.ParseDuration(c.CrawlInterval)
 	if err != nil {
-		log.Fatalf("Error parsing duration: %v", err)
+		slog.Error("error parsing duration", slog.Any("error", err))
+		os.Exit(1)
 	}
 
 	f(ctx, c)
@@ -63,9 +63,8 @@ func runPeriodically(
 			}
 			f(ctx, c)
 		case <-ctx.Done():
-			log.Infof(
-				"Crawler service shut down, type=%s",
-				c.Connector.GetConnectorType(),
+			slog.Info("crawler service shut down",
+				slog.String("type", c.Connector.GetConnectorType()),
 			)
 			return
 		}
@@ -73,9 +72,8 @@ func runPeriodically(
 }
 
 func startCrawler(ctx context.Context, c *Crawler) {
-	log.Infof(
-		"Crawler task started, type=%s",
-		c.Connector.GetConnectorType(),
+	slog.Info("crawler task started",
+		slog.String("type", c.Connector.GetConnectorType()),
 	)
 
 	ctx, cancel := context.WithTimeout(
@@ -85,22 +83,21 @@ func startCrawler(ctx context.Context, c *Crawler) {
 
 	envs, err := c.Connector.GetEnvironments(ctx)
 	if err != nil {
-		log.Errorf("Error finding VMs: %v", err)
+		slog.Error("error finding VMs", slog.Any("error", err))
 		return
 	}
 
 	if envs != nil {
-		log.Info("Writing environments to database")
+		slog.Info("writing environments to database")
 		if err := c.Repository.WriteEnvironments(
 			ctx, envs,
 		); err != nil {
-			log.Errorf("Error writing to DB: %v", err)
+			slog.Error("error writing to DB", slog.Any("error", err))
 			return
 		}
 	}
 
-	log.Infof(
-		"Crawler task finished, type=%s",
-		c.Connector.GetConnectorType(),
+	slog.Info("crawler task finished",
+		slog.String("type", c.Connector.GetConnectorType()),
 	)
 }
