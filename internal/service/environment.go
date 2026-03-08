@@ -3,8 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
-
-	log "github.com/sirupsen/logrus"
+	"log/slog"
 
 	"github.com/fragpit/env-cleaner/internal/model"
 	"github.com/fragpit/env-cleaner/pkg/utils"
@@ -87,7 +86,10 @@ func (s *EnvironmentService) ExtendEnvironment(ctx context.Context, envID, perio
 	}
 
 	if err := s.repo.DeleteToken(ctx, env.EnvID); err != nil {
-		log.Errorf("Error deleting token for environment id: %s, %v", env.EnvID, err)
+		slog.Error("error deleting token",
+			slog.String("env_id", env.EnvID),
+			slog.Any("error", err),
+		)
 	}
 
 	return env, nil

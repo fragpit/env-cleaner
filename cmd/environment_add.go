@@ -9,7 +9,9 @@ import (
 	"net/url"
 	"path"
 
-	log "github.com/sirupsen/logrus"
+	"log/slog"
+	"os"
+
 	"github.com/spf13/cobra"
 
 	"github.com/fragpit/env-cleaner/internal/api"
@@ -31,7 +33,8 @@ var addCmd = &cobra.Command{
 	Long:    `Add environment`,
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := Add(cmd, args); err != nil {
-			log.Fatalf("Error: %v", err)
+			slog.Error("error", slog.Any("error", err))
+			os.Exit(1)
 		}
 	},
 }
@@ -49,16 +52,20 @@ func init() {
 		StringVarP(&envTTL, "ttl", "", "", "Time to live for the environment")
 
 	if err := addCmd.MarkFlagRequired("name"); err != nil {
-		log.Fatalf("Error: %v", err)
+		slog.Error("error", slog.Any("error", err))
+			os.Exit(1)
 	}
 	if err := addCmd.MarkFlagRequired("owner"); err != nil {
-		log.Fatalf("Error: %v", err)
+		slog.Error("error", slog.Any("error", err))
+			os.Exit(1)
 	}
 	if err := addCmd.MarkFlagRequired("type"); err != nil {
-		log.Fatalf("Error: %v", err)
+		slog.Error("error", slog.Any("error", err))
+			os.Exit(1)
 	}
 	if err := addCmd.MarkFlagRequired("ttl"); err != nil {
-		log.Fatalf("Error: %v", err)
+		slog.Error("error", slog.Any("error", err))
+			os.Exit(1)
 	}
 }
 

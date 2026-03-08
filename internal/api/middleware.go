@@ -2,10 +2,9 @@ package api
 
 import (
 	"encoding/base64"
+	"log/slog"
 	"net/http"
 	"strings"
-
-	log "github.com/sirupsen/logrus"
 )
 
 func (a *API) authMiddleware(next http.Handler) http.Handler {
@@ -22,13 +21,13 @@ func (a *API) authMiddleware(next http.Handler) http.Handler {
 		encodedKey := strings.TrimPrefix(authHeader, "Basic ")
 		decodedKeyBytes, err := base64.StdEncoding.DecodeString(encodedKey)
 		if err != nil {
-			log.Errorf("Error decoding base64: %v", err)
+			slog.Error("error decoding base64", slog.Any("error", err))
 			sendErrorResponse(w, http.StatusBadRequest, "Invalid base64 encoding")
 			return
 		}
 
 		if string(decodedKeyBytes) != serverAPIKey {
-			log.Errorf("Invalid API key: %s", string(decodedKeyBytes))
+			slog.Error("invalid API key", slog.String("key", string(decodedKeyBytes)))
 			sendErrorResponse(w, http.StatusUnauthorized, "Invalid API key")
 			return
 		}

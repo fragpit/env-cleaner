@@ -4,12 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/url"
 	"slices"
 	"strings"
 	"time"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/vmware/govmomi"
 	"github.com/vmware/govmomi/find"
 	"github.com/vmware/govmomi/object"
@@ -103,14 +103,14 @@ func (vc *Connector) GetEnvironments(
 
 		_, err := finder.Folder(ctx, folderName)
 		if err != nil {
-			log.Error("Folder not found: ", folderName)
+			slog.Error("folder not found", slog.String("folder", folderName))
 			continue
 		}
 
 		var notFoundError *find.NotFoundError
 		vms, err := finder.VirtualMachineList(ctx, folderName+"*")
 		if errors.As(err, &notFoundError) {
-			log.Infof("No virtual machines found in folder: %s", folderName)
+			slog.Info("no virtual machines found in folder", slog.String("folder", folderName))
 		} else if err != nil {
 			return nil, fmt.Errorf("error finding vms: %w", err)
 		}
@@ -139,14 +139,14 @@ func (vc *Connector) GetEnvironments(
 	for i := range vmt {
 		vm := &vmt[i]
 		if slices.Contains(vc.EnvCfg.BlacklistVMs, vm.Name) {
-			log.Warnf("Skipped VM: %s: blacklisted", vm.Name)
+			slog.Warn("skipped VM: blacklisted", slog.String("name", vm.Name))
 			continue
 		}
 
 		owner := parseAnnotation(vm.Summary.Config.Annotation, "EC_OWNER")
 		ttl := parseAnnotation(vm.Summary.Config.Annotation, "EC_TTL")
 		if owner == "" || ttl == "" {
-			log.Warnf("Skipped VM %s: owner or ttl is empty", vm.Name)
+			slog.Warn("skipped VM: owner or ttl is empty", slog.String("name", vm.Name))
 			envTmp := &model.Environment{
 				Name: vm.Name,
 				Type: connectorType,
@@ -159,7 +159,10 @@ func (vc *Connector) GetEnvironments(
 
 		deleteAt, deleteAtSec, err := utils.SetDeleteAt(ttl)
 		if err != nil {
-			log.Warnf("Skipped VM %s: error setting delete_at: %v", vm.Name, err)
+			slog.Warn("skipped VM: error setting delete_at",
+				slog.String("name", vm.Name),
+				slog.Any("error", err),
+			)
 			continue
 		}
 

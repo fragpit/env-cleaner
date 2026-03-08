@@ -5,11 +5,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"slices"
 	"strconv"
 	"time"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/xhit/go-str2duration/v2"
 	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/cli"
@@ -72,12 +72,20 @@ func New(cfg *Config, nt model.Notificator) (*Connector, error) {
 	}, nil
 }
 
+func slogInfof(format string, v ...interface{}) {
+	slog.Info(fmt.Sprintf(format, v...))
+}
+
+func slogDebugf(format string, v ...interface{}) {
+	slog.Debug(fmt.Sprintf(format, v...))
+}
+
 func (h *Connector) GetEnvironments(
 	_ context.Context,
 ) ([]model.Environment, error) {
 	actionConfig := new(action.Configuration)
 
-	if err := actionConfig.Init(h.HelmClient.RESTClientGetter(), "", "", log.Printf); err != nil {
+	if err := actionConfig.Init(h.HelmClient.RESTClientGetter(), "", "", slogInfof); err != nil {
 		return nil, fmt.Errorf("error getting releases: %w", err)
 	}
 
@@ -100,17 +108,16 @@ func (h *Connector) GetEnvironments(
 	}
 
 	if len(results) == 0 {
-		log.Infof("No helm releases found for specified filter: %s", filter)
+		slog.Info("no helm releases found for specified filter", slog.String("filter", filter))
 		return nil, nil
 	}
 
 	envs := make([]model.Environment, 0, len(results))
 	for _, rel := range results {
 		if slices.Contains(h.Cfg.EnvCfg.BlacklistNamespaces, rel.Namespace) {
-			log.Warnf(
-				"Skipped helm release %s (%s): blacklisted",
-				rel.Name,
-				rel.Namespace,
+			slog.Warn("skipped helm release: blacklisted",
+				slog.String("name", rel.Name),
+				slog.String("namespace", rel.Namespace),
 			)
 			continue
 		}
@@ -118,10 +125,9 @@ func (h *Connector) GetEnvironments(
 		owner := getChartValue(rel, "ec_owner")
 		ttl := getChartValue(rel, "ec_ttl")
 		if owner == "" || ttl == "" {
-			log.Warnf(
-				"Skipped helm release %s (%s): owner or ttl is empty",
-				rel.Name,
-				rel.Namespace,
+			slog.Warn("skipped helm release: owner or ttl is empty",
+				slog.String("name", rel.Name),
+				slog.String("namespace", rel.Namespace),
 			)
 			envTmp := &model.Environment{
 				Name:      rel.Name,
@@ -136,11 +142,10 @@ func (h *Connector) GetEnvironments(
 
 		deleteAt, deleteAtSec, err := utils.SetDeleteAt(ttl)
 		if err != nil {
-			log.Warnf(
-				"Skipped helm release %s (%s): error setting deleteAt: %v",
-				rel.Name,
-				rel.Namespace,
-				err,
+			slog.Warn("skipped helm release: error setting deleteAt",
+				slog.String("name", rel.Name),
+				slog.String("namespace", rel.Namespace),
+				slog.Any("error", err),
 			)
 			continue
 		}
@@ -168,7 +173,7 @@ func (h *Connector) GetEnvironmentID(
 	h.HelmClient.SetNamespace(env.Namespace)
 	actionConfig := new(action.Configuration)
 
-	if err := actionConfig.Init(h.HelmClient.RESTClientGetter(), env.Namespace, "", log.Printf); err != nil {
+	if err := actionConfig.Init(h.HelmClient.RESTClientGetter(), env.Namespace, "", slogInfof); err != nil {
 		return "", fmt.Errorf("error getting release: %w", err)
 	}
 
@@ -215,7 +220,7 @@ func (h *Connector) DeleteEnvironment(
 	h.HelmClient.SetNamespace(env.Namespace)
 	actionConfig := new(action.Configuration)
 
-	if err := actionConfig.Init(h.HelmClient.RESTClientGetter(), env.Namespace, "", log.Debugf); err != nil {
+	if err := actionConfig.Init(h.HelmClient.RESTClientGetter(), env.Namespace, "", slogDebugf); err != nil {
 		return fmt.Errorf("error deleting release: %w", err)
 	}
 

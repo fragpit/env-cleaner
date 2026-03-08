@@ -1,7 +1,8 @@
 package cmd
 
 import (
-	log "github.com/sirupsen/logrus"
+	"log/slog"
+
 	"github.com/spf13/cobra"
 )
 
@@ -15,7 +16,7 @@ var envCmd = &cobra.Command{
 	Short:   "Operations with environments",
 	Long:    `Environment command group allows to manage environments`,
 	Run: func(cmd *cobra.Command, args []string) { //nolint:revive
-		log.Info("environment called")
+		slog.Info("environment called")
 	},
 }
 

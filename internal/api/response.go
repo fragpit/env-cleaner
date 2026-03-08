@@ -3,9 +3,8 @@ package api
 import (
 	"encoding/json"
 	"errors"
+	"log/slog"
 	"net/http"
-
-	log "github.com/sirupsen/logrus"
 
 	"github.com/fragpit/env-cleaner/internal/model"
 )
@@ -31,7 +30,7 @@ func sendSuccessResponse(w http.ResponseWriter, data any) {
 	w.WriteHeader(http.StatusOK)
 
 	if err := json.NewEncoder(w).Encode(response); err != nil {
-		log.Errorf("error encoding JSON response: %v", err)
+		slog.Error("error encoding JSON response", slog.Any("error", err))
 		sendErrorResponse(
 			w,
 			http.StatusInternalServerError,
@@ -53,7 +52,7 @@ func sendErrorResponse(w http.ResponseWriter, statusCode int, message string) {
 	w.WriteHeader(statusCode)
 
 	if err := json.NewEncoder(w).Encode(response); err != nil {
-		log.Errorf("error encoding JSON response: %v", err)
+		slog.Error("error encoding JSON response", slog.Any("error", err))
 	}
 }
 
@@ -66,16 +65,16 @@ func handleServiceError(
 
 	switch {
 	case errors.As(err, &ve):
-		log.Errorf("Validation error [%s]: %v", subject, err)
+		slog.Error("validation error", slog.String("subject", subject), slog.Any("error", err))
 		sendErrorResponse(w, http.StatusBadRequest, ve.Msg)
 	case errors.As(err, &nf):
-		log.Errorf("Not found [%s]: %v", subject, err)
+		slog.Error("not found", slog.String("subject", subject), slog.Any("error", err))
 		sendErrorResponse(w, http.StatusNotFound, nf.Msg)
 	case errors.As(err, &ce):
-		log.Warnf("Conflict [%s]: %v", subject, err)
+		slog.Warn("conflict", slog.String("subject", subject), slog.Any("error", err))
 		sendErrorResponse(w, http.StatusConflict, ce.Msg)
 	default:
-		log.Errorf("Internal error [%s]: %v", subject, err)
+		slog.Error("internal error", slog.String("subject", subject), slog.Any("error", err))
 		sendErrorResponse(
 			w,
 			http.StatusInternalServerError,

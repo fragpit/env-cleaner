@@ -3,9 +3,8 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"net/http"
-
-	log "github.com/sirupsen/logrus"
 
 	"github.com/fragpit/env-cleaner/internal/model"
 )
@@ -39,7 +38,7 @@ func (h *EnvironmentHandler) GetEnvironments(w http.ResponseWriter, r *http.Requ
 func (h *EnvironmentHandler) AddEnvironment(w http.ResponseWriter, r *http.Request) {
 	var env Environment
 	if err := json.NewDecoder(r.Body).Decode(&env); err != nil {
-		log.Errorf("Error decoding request: %v", err)
+		slog.Error("error decoding request", slog.Any("error", err))
 		sendErrorResponse(w, http.StatusBadRequest, "error decoding request")
 		return
 	}
@@ -72,16 +71,21 @@ func (h *EnvironmentHandler) ExtendEnvironment(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	log.Infof(
-		"Extended environment: %s, type: %s, id: %s, period: %s, token: %s",
-		env.DisplayName(), env.Type, env.EnvID, period, token,
+	slog.Info("extended environment",
+		slog.String("name", env.DisplayName()),
+		slog.String("type", env.Type),
+		slog.String("id", env.EnvID),
+		slog.String("period", period),
+		slog.String("token", token),
 	)
 
 	msg := fmt.Sprintf("Extended environment: %s, type: %s, period: %s",
 		env.DisplayName(), env.Type, period)
 	w.WriteHeader(http.StatusOK)
 	if _, err := fmt.Fprint(w, msg); err != nil {
-		log.Errorf("Error writing response, environment id: %s, %v", envID, err)
+		slog.Error("error writing response",
+			slog.String("env_id", envID),
+			slog.Any("error", err),
+		)
 	}
 }
-

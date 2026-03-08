@@ -1,10 +1,12 @@
 package cmd
 
 import (
+	"fmt"
+	"log/slog"
 	"os"
+	"path/filepath"
 	"strings"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
@@ -17,6 +19,8 @@ var err error
 var Debug bool
 var version = "undefined"
 
+var logLevel slog.LevelVar
+
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "env-cleaner",
@@ -26,17 +30,17 @@ Automated cleaner is a tool to clean up your environments within different
 infrastructures.`,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) { //nolint:revive
 		if Debug {
-			log.Info("Debug mode enabled")
+			logLevel.Set(slog.LevelDebug)
+			slog.Info("debug mode enabled")
 			for key, value := range viper.GetViper().AllSettings() {
-				log.WithFields(log.Fields{
-					key: value,
-				}).Info("Command Flag")
+				slog.Info("command flag", slog.String(key, fmt.Sprint(value)))
 			}
 		}
 
 		cfg, err = config.NewClientConfig()
 		if err != nil {
-			log.Fatalf("Error reading configuration: %v", err)
+			slog.Error("error reading configuration", slog.Any("error", err))
+			os.Exit(1)
 		}
 	},
 }
@@ -63,19 +67,30 @@ func init() {
 		BoolVarP(&Debug, "debug", "d", false, "Enable debug mode (default: false)")
 
 	if err := viper.BindPFlag("debug", rootCmd.PersistentFlags().Lookup("debug")); err != nil {
-		log.Error(err)
+		slog.Error("error binding flag", slog.Any("error", err))
 	}
 
-	log.SetFormatter(&log.TextFormatter{
-		FullTimestamp: true,
+	handler := slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
+		Level:     &logLevel,
+		AddSource: true,
+		ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
+			if a.Key == slog.SourceKey {
+				if src, ok := a.Value.Any().(*slog.Source); ok {
+					src.File = filepath.Base(src.File)
+					a.Value = slog.AnyValue(src)
+				}
+			}
+			return a
+		},
 	})
+	slog.SetDefault(slog.New(handler))
 }
 
 // initConfig reads in config file and ENV variables if set.
 func initConfig() {
 	cmd, _, err := rootCmd.Find(os.Args[1:])
 	if err != nil {
-		log.Error(err)
+		slog.Error("error finding command", slog.Any("error", err))
 		return
 	}
 
@@ -104,9 +119,9 @@ func initConfig() {
 
 	// If a config file is found, read it in.
 	if err := viper.ReadInConfig(); err == nil {
-		log.Info("Using config file:", viper.ConfigFileUsed())
+		slog.Info("using config file", slog.String("file", viper.ConfigFileUsed()))
 	} else {
-		log.Fatal(err)
+		slog.Error(err.Error())
+		os.Exit(1)
 	}
 }
-

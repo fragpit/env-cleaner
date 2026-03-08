@@ -3,12 +3,12 @@ package api
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
-	log "github.com/sirupsen/logrus"
 
 	"github.com/fragpit/env-cleaner/internal/config"
 	"github.com/fragpit/env-cleaner/internal/model"
@@ -43,7 +43,7 @@ func New(
 }
 
 func (a *API) Run(ctx context.Context) error {
-	log.Info("Starting API")
+	slog.Info("starting API")
 
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
@@ -66,31 +66,30 @@ func (a *API) Run(ctx context.Context) error {
 	errChan := make(chan error, 1)
 	go func() {
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Errorf("failed to start server: %v", err)
+			slog.Error("failed to start server", slog.Any("error", err))
 			errChan <- fmt.Errorf("failed to start server: %w", err)
 		}
 	}()
 
 	select {
 	case <-ctx.Done():
-		log.Info("Received shutdown signal, shutting down API service")
+		slog.Info("received shutdown signal, shutting down API service")
 		ctx, cancel := context.WithTimeout(ctx, apiShutdownTimeout)
 		defer cancel()
 
 		if err := srv.Shutdown(ctx); err != nil {
-			log.Errorf("Failed to shutdown API service gracefully: %v", err)
+			slog.Error("failed to shutdown API service gracefully", slog.Any("error", err))
 			return fmt.Errorf("failed to shutdown API service gracefully: %w", err)
 		}
 
-		log.Info("API service shut down")
+		slog.Info("API service shut down gracefully")
 		return nil
 	case err := <-errChan:
 		if err != nil {
-			log.Errorf("API service encountered an error: %v", err)
+			slog.Error("API service encountered an error", slog.Any("error", err))
 			return err
 		}
 	}
 
 	return nil
 }
-

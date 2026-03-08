@@ -5,7 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	log "github.com/sirupsen/logrus"
+	"log/slog"
+
 	velerov1api "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	clientset "github.com/vmware-tanzu/velero/pkg/generated/clientset/versioned"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -45,7 +46,7 @@ func (v *VeleroBackup) Create(
 	backupName string,
 	ttl time.Duration,
 ) error {
-	log.Infof("Creating Velero backup with name: %s", backupName)
+	slog.Info("creating velero backup", slog.String("name", backupName))
 
 	backupObj := velerov1api.Backup{
 		ObjectMeta: metav1.ObjectMeta{
@@ -69,7 +70,7 @@ func (v *VeleroBackup) Create(
 		return err
 	}
 
-	log.Infof("Backup request %q submitted successfully.\n", backupName)
+	slog.Info("backup request submitted successfully", slog.String("name", backupName))
 
 	return nil
 }

@@ -6,8 +6,9 @@ import (
 	"fmt"
 	"os"
 
+	"log/slog"
+
 	_ "github.com/mattn/go-sqlite3" // Import go-sqlite3 library
-	log "github.com/sirupsen/logrus"
 
 	"github.com/fragpit/env-cleaner/internal/model"
 	"github.com/fragpit/env-cleaner/pkg/utils"
@@ -126,11 +127,10 @@ func (s *Storage) WriteEnvironments(
 				continue
 			}
 
-			log.Infof(
-				"New environment added: %s, type: %s, id: %s",
-				e.DisplayName(),
-				e.Type,
-				e.EnvID,
+			slog.Info("new environment added",
+				slog.String("name", e.DisplayName()),
+				slog.String("type", e.Type),
+				slog.String("id", e.EnvID),
 			)
 
 			if _, err := stmt.Exec(

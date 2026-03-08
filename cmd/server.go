@@ -1,7 +1,9 @@
 package cmd
 
 import (
-	log "github.com/sirupsen/logrus"
+	"log/slog"
+	"os"
+
 	"github.com/spf13/cobra"
 
 	"github.com/fragpit/env-cleaner/internal/server"
@@ -14,9 +16,10 @@ var serverCmd = &cobra.Command{
 	Long: `Server mode is a common mode for this application. It starts an API
 interface, and schedules a crawler and cleanup job for the specified environments.`,
 	Run: func(cmd *cobra.Command, args []string) { //nolint:revive
-		log.Infof("Version: %s", version)
+		slog.Info("starting server", slog.String("version", version))
 		if err := server.Run(); err != nil {
-			log.Fatalf("Fatal error: %v", err)
+			slog.Error("fatal error", slog.Any("error", err))
+			os.Exit(1)
 		}
 	},
 }
