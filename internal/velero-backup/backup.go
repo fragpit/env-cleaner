@@ -70,7 +70,10 @@ func (v *VeleroBackup) Create(
 		return err
 	}
 
-	slog.Info("backup request submitted successfully", slog.String("name", backupName))
+	slog.Info(
+		"backup request submitted successfully",
+		slog.String("name", backupName),
+	)
 
 	return nil
 }
@@ -91,7 +94,11 @@ func checkBackupStatus(v *VeleroBackup, backupName string) error {
 			if backupStatus.Status.Phase == velerov1api.BackupPhaseFailedValidation ||
 				backupStatus.Status.Phase == velerov1api.BackupPhasePartiallyFailed ||
 				backupStatus.Status.Phase == velerov1api.BackupPhaseFailed {
-				return fmt.Errorf("backup %q failed with status %q", backupName, backupStatus.Status.Phase)
+				return fmt.Errorf(
+					"backup %q failed with status %q",
+					backupName,
+					backupStatus.Status.Phase,
+				)
 			}
 
 			time.Sleep(5 * time.Second)

@@ -11,4 +11,3 @@ type Connector interface {
 	GetEnvironments(ctx context.Context) ([]Environment, error)
 	GetEnvironmentID(ctx context.Context, env *Environment) (string, error)
 }
-

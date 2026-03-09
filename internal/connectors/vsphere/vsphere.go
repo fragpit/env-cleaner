@@ -110,7 +110,10 @@ func (vc *Connector) GetEnvironments(
 		var notFoundError *find.NotFoundError
 		vms, err := finder.VirtualMachineList(ctx, folderName+"*")
 		if errors.As(err, &notFoundError) {
-			slog.Info("no virtual machines found in folder", slog.String("folder", folderName))
+			slog.Info(
+				"no virtual machines found in folder",
+				slog.String("folder", folderName),
+			)
 		} else if err != nil {
 			return nil, fmt.Errorf("error finding vms: %w", err)
 		}
@@ -146,7 +149,10 @@ func (vc *Connector) GetEnvironments(
 		owner := parseAnnotation(vm.Summary.Config.Annotation, "EC_OWNER")
 		ttl := parseAnnotation(vm.Summary.Config.Annotation, "EC_TTL")
 		if owner == "" || ttl == "" {
-			slog.Warn("skipped VM: owner or ttl is empty", slog.String("name", vm.Name))
+			slog.Warn(
+				"skipped VM: owner or ttl is empty",
+				slog.String("name", vm.Name),
+			)
 			envTmp := &model.Environment{
 				Name: vm.Name,
 				Type: connectorType,
@@ -328,7 +334,10 @@ func (vc *Connector) searchVMbyName(
 	if len(objs) == 0 {
 		return "", fmt.Errorf("error finding vm: %w", errors.New("vm not found"))
 	} else if len(objs) > 1 {
-		return "", fmt.Errorf("error finding vm: %w", errors.New("multiple vms found"))
+		return "", fmt.Errorf(
+			"error finding vm: %w",
+			errors.New("multiple vms found"),
+		)
 	}
 
 	vmID := objs[0].Value
