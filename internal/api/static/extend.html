@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Extend Environment</title>
+  <link rel="stylesheet" href="/extend/static/extend.css">
+</head>
+<body>
+  <div class="card">
+    <h1>Extend Environment</h1>
+    <div class="env-info">
+      <div class="env-field">
+        <span class="label">Name</span>
+        <span class="value" id="env-name">{{.Name}}</span>
+      </div>
+      <div class="env-field">
+        <span class="label">Type</span>
+        <span class="value" id="env-type">{{.Type}}</span>
+      </div>
+      <div class="env-field">
+        <span class="label">Owner</span>
+        <span class="value" id="env-owner">{{.Owner}}</span>
+      </div>
+      <div class="env-field">
+        <span class="label">Scheduled deletion</span>
+        <span class="value" id="env-delete-at">{{.DeleteAt}}</span>
+      </div>
+    </div>
+    <div id="actions">
+      <p class="hint">Choose extension period:</p>
+      <div class="buttons">
+        <button class="btn" onclick="extend('{{.PeriodMin}}')">{{.PeriodMin}}</button>
+        <button class="btn" onclick="extend('{{.PeriodMid}}')">{{.PeriodMid}}</button>
+        <button class="btn" onclick="extend('{{.PeriodMax}}')">{{.PeriodMax}}</button>
+      </div>
+    </div>
+    <div id="result" class="hidden"></div>
+  </div>
+  <script>
+    var envID = "{{.EnvID}}";
+    var token = "{{.Token}}";
+  </script>
+  <script src="/extend/static/extend.js"></script>
+</body>
+</html>

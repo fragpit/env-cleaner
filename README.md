@@ -14,6 +14,7 @@
   - [Database Structure](#database-structure)
 - [API](#api)
   - [GET /extend](#get-extend)
+  - [GET /extend/apply](#get-extendapply)
   - [GET /api/environments](#get-apienvironments)
   - [POST /api/environments](#post-apienvironments)
 - [Notifications](#notifications)
@@ -140,13 +141,22 @@ Table `tokens`:
 
 ### GET /extend
 
-Extends the specified environment for the specified period.
+Serves an interactive HTML page where the user can choose an extension period for their environment. The page displays environment info (name, type, owner, scheduled deletion date) and three buttons with period options (min, mid, max). This route does not require basic auth - the token parameter provides security.
+
+Parameters:
+
+- `env_id` - environment ID in the database.
+- `token` - one-time token for extending the environment.
+
+### GET /extend/apply
+
+Extends the specified environment for the specified period. Returns a JSON response. Called by the extend UI page via JavaScript.
 
 Parameters:
 
 - `env_id` - environment ID in the database.
 - `period` - extension period (e.g. `2d`, `4d`, `1w`). Maximum is specified in the configuration. Exceeding it returns an error.
-- `token` - one-time token for extending the environment. A unique token is generated for each stale notification and included in the extend links. After a single use the token is deleted, preventing repeated extensions via the same link.
+- `token` - one-time token for extending the environment. A unique token is generated for each stale notification and included in the extend link. After a single use the token is deleted, preventing repeated extensions via the same link.
 
 ### GET /api/environments
 
@@ -184,13 +194,10 @@ You need to move the environment to the blacklist, add metadata manually, or mov
 Environment release-name (namespace: release-ns), type: helm,
 is stale and will be deleted in <stale_threshold>
 
-Use one of the following links to extend your environment:
-- [Extend <min_period>]
-- [Extend <mid_period>]
-- [Extend <max_period>]
+[Extend your environment]
 ```
 
-The environment has less than `stale_threshold` left until deletion. A notification is sent to the user with a suggestion to extend the environment. Extension periods are calculated dynamically: `min` equals `stale_threshold`, `max` equals `max_extend_duration`, and `mid` is half of `max`.
+The environment has less than `stale_threshold` left until deletion. A notification is sent to the user with a link to the extend UI page. On the page, the user can choose one of three extension periods: `min` equals `stale_threshold`, `max` equals `max_extend_duration`, and `mid` is half of `max`.
 
 ### Environment Has Been Deleted
 

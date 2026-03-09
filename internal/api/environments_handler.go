@@ -2,7 +2,6 @@ package api
 
 import (
 	"encoding/json"
-	"fmt"
 	"log/slog"
 	"net/http"
 )
@@ -74,16 +73,9 @@ func (h *EnvironmentHandler) ExtendEnvironment(
 		slog.String("type", env.Type),
 		slog.String("id", env.EnvID),
 		slog.String("period", period),
-		slog.String("token", token),
 	)
 
-	msg := fmt.Sprintf("Extended environment: %s, type: %s, period: %s",
-		env.DisplayName(), env.Type, period)
-	w.WriteHeader(http.StatusOK)
-	if _, err := fmt.Fprint(w, msg); err != nil {
-		slog.Error("error writing response",
-			slog.String("env_id", envID),
-			slog.Any("error", err),
-		)
-	}
+	sendSuccessResponse(
+		w, NewEnvironmentResponse(env),
+	)
 }
