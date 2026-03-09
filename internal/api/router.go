@@ -21,6 +21,10 @@ const (
 type EnvironmentService interface {
 	GetEnvironments(ctx context.Context) ([]*model.Environment, error)
 	AddEnvironment(ctx context.Context, env *model.Environment, ttl string) error
+	GetEnvironmentForExtend(
+		ctx context.Context,
+		envID, token string,
+	) (*model.Environment, error)
 	ExtendEnvironment(
 		ctx context.Context,
 		envID, period, token string,
@@ -49,12 +53,41 @@ func (a *API) Run(ctx context.Context) error {
 	r.Use(middleware.RequestID)
 	r.Use(middleware.Logger)
 	r.Use(middleware.CleanPath)
-	r.Use(a.authMiddleware)
 
 	envHandler := NewEnvironmentHandler(a.service)
-	r.Get("/api/environments", envHandler.GetEnvironments)
-	r.Post("/api/environments", envHandler.AddEnvironment)
-	r.Get("/extend", envHandler.ExtendEnvironment)
+	extendPage := NewExtendPageHandler(
+		a.service,
+		a.Config.StaleThreshold,
+		a.Config.MaxExtendDuration,
+	)
+
+	r.Group(func(r chi.Router) {
+		r.Get("/extend", extendPage.ServePage)
+		r.Get(
+			"/extend/apply",
+			envHandler.ExtendEnvironment,
+		)
+		r.Get(
+			"/extend/static/extend.css",
+			extendPage.ServeCSS,
+		)
+		r.Get(
+			"/extend/static/extend.js",
+			extendPage.ServeJS,
+		)
+	})
+
+	r.Group(func(r chi.Router) {
+		r.Use(a.authMiddleware)
+		r.Get(
+			"/api/environments",
+			envHandler.GetEnvironments,
+		)
+		r.Post(
+			"/api/environments",
+			envHandler.AddEnvironment,
+		)
+	})
 
 	srv := &http.Server{
 		Addr:         ":8080",
@@ -78,7 +111,10 @@ func (a *API) Run(ctx context.Context) error {
 		defer cancel()
 
 		if err := srv.Shutdown(ctx); err != nil {
-			slog.Error("failed to shutdown API service gracefully", slog.Any("error", err))
+			slog.Error(
+				"failed to shutdown API service gracefully",
+				slog.Any("error", err),
+			)
 			return fmt.Errorf("failed to shutdown API service gracefully: %w", err)
 		}
 

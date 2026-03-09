@@ -79,7 +79,6 @@ func Run() error {
 		cfg.Notifications.AdminOnly,
 		cfg.APIURL,
 		cfg.StaleThreshold,
-		cfg.MaxExtendDuration,
 		&notifications.SlackConfig{
 			Enabled:      cfg.Notifications.Slack.Enabled,
 			WebhookURL:   cfg.Notifications.Slack.WebhookURL,
@@ -104,7 +103,9 @@ func Run() error {
 	enabledConnectors := make(map[string]model.Connector)
 
 	if !cfg.Environments.VSphereVM.Enabled && !cfg.Environments.Helm.Enabled {
-		slog.Error("check environments configuration settings: no connectors enabled")
+		slog.Error(
+			"check environments configuration settings: no connectors enabled",
+		)
 		return err
 	}
 
@@ -175,7 +176,10 @@ func Run() error {
 	go func() {
 		defer wg.Done()
 		if err := a.Run(ctx); err != nil {
-			slog.Error("shutdown env-cleaner, error running API", slog.Any("error", err))
+			slog.Error(
+				"shutdown env-cleaner, error running API",
+				slog.Any("error", err),
+			)
 			cancel()
 		}
 	}()
