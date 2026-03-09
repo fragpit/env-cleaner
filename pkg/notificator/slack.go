@@ -44,7 +44,11 @@ func (nt *SlackNotificator) Send(msg *SlackMessage) error {
 		return fmt.Errorf("error marshaling slack message: %w", err)
 	}
 
-	resp, err := http.Post(nt.WebhookURL, "application/json", bytes.NewBuffer(body))
+	resp, err := http.Post(
+		nt.WebhookURL,
+		"application/json",
+		bytes.NewBuffer(body),
+	)
 	if err != nil {
 		return fmt.Errorf("error sending slack notification: %w", err)
 	}

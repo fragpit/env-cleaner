@@ -134,7 +134,13 @@ func (s *Storage) WriteEnvironments(
 			)
 
 			if _, err := stmt.Exec(
-				e.EnvID, e.Type, e.Name, e.Namespace, e.Owner, e.DeleteAt, e.DeleteAtSec,
+				e.EnvID,
+				e.Type,
+				e.Name,
+				e.Namespace,
+				e.Owner,
+				e.DeleteAt,
+				e.DeleteAtSec,
 			); err != nil {
 				return err
 			}
@@ -342,7 +348,6 @@ func (s *Storage) executeTransaction(
 func (s *Storage) Close() error {
 	return s.DB.Close()
 }
-
 
 func (s *Storage) getEnvironments(
 	ctx context.Context,

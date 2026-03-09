@@ -337,7 +337,6 @@ func (s *Storage) Close() error {
 	return s.DB.Close()
 }
 
-
 func (s *Storage) getEnvironments(
 	ctx context.Context,
 	query string,

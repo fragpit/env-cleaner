@@ -66,7 +66,10 @@ func init() {
 	rootCmd.PersistentFlags().
 		BoolVarP(&Debug, "debug", "d", false, "Enable debug mode (default: false)")
 
-	if err := viper.BindPFlag("debug", rootCmd.PersistentFlags().Lookup("debug")); err != nil {
+	if err := viper.BindPFlag(
+		"debug",
+		rootCmd.PersistentFlags().Lookup("debug"),
+	); err != nil {
 		slog.Error("error binding flag", slog.Any("error", err))
 	}
 

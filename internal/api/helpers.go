@@ -65,16 +65,32 @@ func handleServiceError(
 
 	switch {
 	case errors.As(err, &ve):
-		slog.Error("validation error", slog.String("subject", subject), slog.Any("error", err))
+		slog.Error(
+			"validation error",
+			slog.String("subject", subject),
+			slog.Any("error", err),
+		)
 		sendErrorResponse(w, http.StatusBadRequest, ve.Msg)
 	case errors.As(err, &nf):
-		slog.Error("not found", slog.String("subject", subject), slog.Any("error", err))
+		slog.Error(
+			"not found",
+			slog.String("subject", subject),
+			slog.Any("error", err),
+		)
 		sendErrorResponse(w, http.StatusNotFound, nf.Msg)
 	case errors.As(err, &ce):
-		slog.Warn("conflict", slog.String("subject", subject), slog.Any("error", err))
+		slog.Warn(
+			"conflict",
+			slog.String("subject", subject),
+			slog.Any("error", err),
+		)
 		sendErrorResponse(w, http.StatusConflict, ce.Msg)
 	default:
-		slog.Error("internal error", slog.String("subject", subject), slog.Any("error", err))
+		slog.Error(
+			"internal error",
+			slog.String("subject", subject),
+			slog.Any("error", err),
+		)
 		sendErrorResponse(
 			w,
 			http.StatusInternalServerError,

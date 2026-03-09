@@ -85,7 +85,12 @@ func (h *Connector) GetEnvironments(
 ) ([]model.Environment, error) {
 	actionConfig := new(action.Configuration)
 
-	if err := actionConfig.Init(h.HelmClient.RESTClientGetter(), "", "", slogInfof); err != nil {
+	if err := actionConfig.Init(
+		h.HelmClient.RESTClientGetter(),
+		"",
+		"",
+		slogInfof,
+	); err != nil {
 		return nil, fmt.Errorf("error getting releases: %w", err)
 	}
 
@@ -108,7 +113,10 @@ func (h *Connector) GetEnvironments(
 	}
 
 	if len(results) == 0 {
-		slog.Info("no helm releases found for specified filter", slog.String("filter", filter))
+		slog.Info(
+			"no helm releases found for specified filter",
+			slog.String("filter", filter),
+		)
 		return nil, nil
 	}
 
@@ -173,7 +181,12 @@ func (h *Connector) GetEnvironmentID(
 	h.HelmClient.SetNamespace(env.Namespace)
 	actionConfig := new(action.Configuration)
 
-	if err := actionConfig.Init(h.HelmClient.RESTClientGetter(), env.Namespace, "", slogInfof); err != nil {
+	if err := actionConfig.Init(
+		h.HelmClient.RESTClientGetter(),
+		env.Namespace,
+		"",
+		slogInfof,
+	); err != nil {
 		return "", fmt.Errorf("error getting release: %w", err)
 	}
 
@@ -220,7 +233,12 @@ func (h *Connector) DeleteEnvironment(
 	h.HelmClient.SetNamespace(env.Namespace)
 	actionConfig := new(action.Configuration)
 
-	if err := actionConfig.Init(h.HelmClient.RESTClientGetter(), env.Namespace, "", slogDebugf); err != nil {
+	if err := actionConfig.Init(
+		h.HelmClient.RESTClientGetter(),
+		env.Namespace,
+		"",
+		slogDebugf,
+	); err != nil {
 		return fmt.Errorf("error deleting release: %w", err)
 	}
 
@@ -298,7 +316,12 @@ func scaleDeployment(
 	sc := *s
 	sc.Spec.Replicas = replicas
 
-	if _, err = client.UpdateScale(ctx, deploymentName, &sc, metav1.UpdateOptions{}); err != nil {
+	if _, err = client.UpdateScale(
+		ctx,
+		deploymentName,
+		&sc,
+		metav1.UpdateOptions{},
+	); err != nil {
 		return err
 	}
 
@@ -319,7 +342,12 @@ func scaleStatefulSet(
 	sc := *s
 	sc.Spec.Replicas = replicas
 
-	if _, err := client.UpdateScale(ctx, statefulsetName, &sc, metav1.UpdateOptions{}); err != nil {
+	if _, err := client.UpdateScale(
+		ctx,
+		statefulsetName,
+		&sc,
+		metav1.UpdateOptions{},
+	); err != nil {
 		return err
 	}
 
