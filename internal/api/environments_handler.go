@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"log/slog"
 	"net/http"
-
-	"github.com/go-chi/chi/v5"
 )
 
 type EnvironmentHandler struct {
@@ -59,7 +57,7 @@ func (h *EnvironmentHandler) ExtendEnvironment(
 	r *http.Request,
 ) {
 	ctx := r.Context()
-	envID := chi.URLParam(r, "id")
+	envID := r.PathValue("id")
 
 	var req ExtendEnvironmentRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
