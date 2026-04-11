@@ -4,15 +4,16 @@ function extend(period) {
     btn.disabled = true;
   });
 
-  var url =
-    "/extend/apply?env_id=" +
-    encodeURIComponent(envID) +
-    "&period=" +
-    encodeURIComponent(period) +
-    "&token=" +
-    encodeURIComponent(token);
-
-  fetch(url)
+  fetch("/api/environments/" + encodeURIComponent(envID) + "/extend", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      period: period,
+      token: token
+    })
+  })
     .then(function (resp) {
       return resp.json().then(function (data) {
         return { ok: resp.ok, data: data };

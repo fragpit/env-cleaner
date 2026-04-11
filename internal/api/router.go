@@ -63,30 +63,19 @@ func (a *API) Run(ctx context.Context) error {
 
 	r.Group(func(r chi.Router) {
 		r.Get("/extend", extendPage.ServePage)
-		r.Get(
-			"/extend/apply",
-			envHandler.ExtendEnvironment,
-		)
-		r.Get(
-			"/extend/static/extend.css",
-			extendPage.ServeCSS,
-		)
-		r.Get(
-			"/extend/static/extend.js",
-			extendPage.ServeJS,
-		)
+		r.Get("/extend/static/extend.css", extendPage.ServeCSS)
+		r.Get("/extend/static/extend.js", extendPage.ServeJS)
 	})
 
 	r.Group(func(r chi.Router) {
 		r.Use(a.authMiddleware)
-		r.Get(
-			"/api/environments",
-			envHandler.GetEnvironments,
-		)
-		r.Post(
-			"/api/environments",
-			envHandler.AddEnvironment,
-		)
+		r.Get("/api/environments", envHandler.GetEnvironments)
+		r.Post("/api/environments", envHandler.AddEnvironment)
+	})
+
+	r.Group(func(r chi.Router) {
+		r.Post("/api/environments/{id}/extend", envHandler.ExtendEnvironment)
+		r.Get("/api/openapi.yaml", serveOpenAPISpec)
 	})
 
 	srv := &http.Server{
