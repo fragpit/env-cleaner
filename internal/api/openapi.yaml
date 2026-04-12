@@ -26,6 +26,11 @@ components:
     Environment:
       type: object
       description: A managed environment registered for lifecycle tracking.
+      required:
+        - env_id
+        - type
+        - name
+        - owner
       properties:
         env_id:
           type: string
@@ -50,17 +55,17 @@ components:
           example: "john.doe"
         delete_at:
           type: string
-          description: Scheduled deletion timestamp (RFC3339).
+          description: Scheduled deletion timestamp.
           example: "2024-01-15 10:00:00"
-      required:
-        - env_id
-        - type
-        - name
-        - owner
 
     CreateEnvironmentRequest:
       type: object
       description: Payload for registering a new environment.
+      required:
+        - name
+        - owner
+        - type
+        - ttl
       properties:
         name:
           type: string
@@ -81,42 +86,44 @@ components:
           example: "helm"
         ttl:
           type: string
-          description: |
-            Time-to-live duration after which the environment is deleted.
-            Supports: `Xd` (days), `Xh` (hours), `Xw` (weeks).
+          description: "Time-to-live duration after which the environment is deleted. Supports: Xd (days), Xh (hours), Xw (weeks)."
           example: "7d"
-      required:
-        - name
-        - owner
-        - type
-        - ttl
 
     ExtendEnvironmentRequest:
       type: object
       description: Payload for extending an environment's TTL.
+      required:
+        - period
+        - token
       properties:
         period:
           type: string
-          description: |
-            Extension period added to the current deletion date.
-            Supports: `Xd` (days), `Xh` (hours), `Xw` (weeks).
+          description: "Extension period added to the current deletion date. Supports: Xd (days), Xh (hours), Xw (weeks)."
           example: "7d"
         token:
           type: string
           description: One-time authentication token issued to the environment owner.
           example: "abc123token"
-      required:
-        - period
-        - token
 
-    SuccessResponse:
+    EnvironmentResponse:
       type: object
       properties:
         success:
           type: boolean
           example: true
         data:
-          description: Response payload (type depends on the endpoint).
+          $ref: '#/components/schemas/Environment'
+
+    EnvironmentListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Environment'
 
     ErrorResponse:
       type: object
@@ -150,14 +157,7 @@ paths:
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessResponse'
-                  - type: object
-                    properties:
-                      data:
-                        type: array
-                        items:
-                          $ref: '#/components/schemas/Environment'
+                $ref: '#/components/schemas/EnvironmentListResponse'
         "401":
           description: Missing or invalid API key.
           content:
@@ -197,12 +197,7 @@ paths:
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/Environment'
+                $ref: '#/components/schemas/EnvironmentResponse'
         "400":
           description: Invalid request payload.
           content:
@@ -240,7 +235,7 @@ paths:
         - name: id
           in: path
           required: true
-          description: Unique environment identifier (`env_id`).
+          description: Unique environment identifier (env_id).
           schema:
             type: string
           example: "a1b2c3d4"
@@ -259,12 +254,7 @@ paths:
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/Environment'
+                $ref: '#/components/schemas/EnvironmentResponse'
         "400":
           description: Invalid request payload or token.
           content:
@@ -283,16 +273,3 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-
-  /api/openapi.yaml:
-    get:
-      summary: OpenAPI specification
-      description: Returns this OpenAPI 3.0 specification in YAML format.
-      operationId: getOpenAPISpec
-      responses:
-        "200":
-          description: OpenAPI specification.
-          content:
-            application/yaml:
-              schema:
-                type: string
