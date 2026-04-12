@@ -57,12 +57,16 @@ func (h *EnvironmentHandler) ExtendEnvironment(
 	r *http.Request,
 ) {
 	ctx := r.Context()
-	queryParams := r.URL.Query()
-	envID := queryParams.Get("env_id")
-	period := queryParams.Get("period")
-	token := queryParams.Get("token")
+	envID := r.PathValue("id")
 
-	env, err := h.service.ExtendEnvironment(ctx, envID, period, token)
+	var req ExtendEnvironmentRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		slog.Error("error decoding request", slog.Any("error", err))
+		sendErrorResponse(w, http.StatusBadRequest, "error decoding request")
+		return
+	}
+
+	env, err := h.service.ExtendEnvironment(ctx, envID, req.Period, req.Token)
 	if err != nil {
 		handleServiceError(w, err, envID)
 		return
@@ -72,10 +76,8 @@ func (h *EnvironmentHandler) ExtendEnvironment(
 		slog.String("name", env.DisplayName()),
 		slog.String("type", env.Type),
 		slog.String("id", env.EnvID),
-		slog.String("period", period),
+		slog.String("period", req.Period),
 	)
 
-	sendSuccessResponse(
-		w, NewEnvironmentResponse(env),
-	)
+	sendSuccessResponse(w, NewEnvironmentResponse(env))
 }

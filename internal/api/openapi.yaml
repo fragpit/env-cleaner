@@ -1,0 +1,275 @@
+openapi: 3.0.3
+info:
+  title: env-cleaner API
+  description: |
+    API for managing temporary environments lifecycle.
+
+    Environments (Helm releases, vSphere VMs) are registered with a TTL and
+    automatically deleted when they expire. Owners receive email notifications
+    with a link to extend the environment lifetime if needed.
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8080
+    description: Local development server
+
+components:
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+      description: |
+        Send `Authorization: Basic <base64(api_key)>` where `api_key` is the
+        value of the `admin_api_key` server configuration option.
+
+  schemas:
+    Environment:
+      type: object
+      description: A managed environment registered for lifecycle tracking.
+      required:
+        - env_id
+        - type
+        - name
+        - owner
+      properties:
+        env_id:
+          type: string
+          description: Unique environment identifier.
+          example: "a1b2c3d4"
+        type:
+          type: string
+          description: Environment type.
+          enum: [helm, vsphere_vm]
+          example: "helm"
+        name:
+          type: string
+          description: Environment name (Helm release name or VM name).
+          example: "feature-branch-42"
+        namespace:
+          type: string
+          description: Kubernetes namespace (Helm environments only).
+          example: "dev"
+        owner:
+          type: string
+          description: Email or username of the environment owner.
+          example: "john.doe"
+        delete_at:
+          type: string
+          description: Scheduled deletion timestamp.
+          example: "2024-01-15 10:00:00"
+
+    CreateEnvironmentRequest:
+      type: object
+      description: Payload for registering a new environment.
+      required:
+        - name
+        - owner
+        - type
+        - ttl
+      properties:
+        name:
+          type: string
+          description: Environment name (Helm release name or VM name).
+          example: "feature-branch-42"
+        namespace:
+          type: string
+          description: Kubernetes namespace (Helm environments only).
+          example: "dev"
+        owner:
+          type: string
+          description: Email or username of the environment owner.
+          example: "john.doe"
+        type:
+          type: string
+          description: Environment type.
+          enum: [helm, vsphere_vm]
+          example: "helm"
+        ttl:
+          type: string
+          description: "Time-to-live duration after which the environment is deleted. Supports: Xd (days), Xh (hours), Xw (weeks)."
+          example: "7d"
+
+    ExtendEnvironmentRequest:
+      type: object
+      description: Payload for extending an environment's TTL.
+      required:
+        - period
+        - token
+      properties:
+        period:
+          type: string
+          description: "Extension period added to the current deletion date. Supports: Xd (days), Xh (hours), Xw (weeks)."
+          example: "7d"
+        token:
+          type: string
+          description: One-time authentication token issued to the environment owner.
+          example: "abc123token"
+
+    EnvironmentResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/Environment'
+
+    EnvironmentListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Environment'
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: object
+          properties:
+            code:
+              type: integer
+              description: HTTP status code.
+              example: 400
+            message:
+              type: string
+              description: Human-readable error description.
+              example: "validation error: ttl is required"
+
+paths:
+  /api/environments:
+    get:
+      summary: List environments
+      description: Returns all environments currently tracked by env-cleaner.
+      operationId: listEnvironments
+      security:
+        - basicAuth: []
+      responses:
+        "200":
+          description: Successful response with environment list.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvironmentListResponse'
+        "401":
+          description: Missing or invalid API key.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        "500":
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    post:
+      summary: Register environment
+      description: |
+        Registers a new environment for lifecycle management. The environment
+        will be automatically deleted once its TTL expires.
+      operationId: createEnvironment
+      security:
+        - basicAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateEnvironmentRequest'
+            example:
+              name: "feature-branch-42"
+              namespace: "dev"
+              owner: "john.doe"
+              type: "helm"
+              ttl: "7d"
+      responses:
+        "200":
+          description: Environment registered successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvironmentResponse'
+        "400":
+          description: Invalid request payload.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        "401":
+          description: Missing or invalid API key.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        "409":
+          description: An environment with the same name already exists.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        "500":
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/environments/{id}/extend:
+    post:
+      summary: Extend environment TTL
+      description: |
+        Extends the scheduled deletion date of an environment by the given period.
+        Uses a one-time token issued to the environment owner (delivered via email).
+        No API key is required — the token authenticates the request.
+      operationId: extendEnvironment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Unique environment identifier (env_id).
+          schema:
+            type: string
+          example: "a1b2c3d4"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExtendEnvironmentRequest'
+            example:
+              period: "7d"
+              token: "abc123token"
+      responses:
+        "200":
+          description: Environment extended successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvironmentResponse'
+        "400":
+          description: Invalid request payload or token.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        "404":
+          description: Environment not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        "500":
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'

@@ -56,3 +56,9 @@ func NewEnvironmentListResponse(
 	}
 	return result
 }
+
+// ExtendEnvironmentRequest is a DTO for extending an environment's TTL.
+type ExtendEnvironmentRequest struct {
+	Period string `json:"period"`
+	Token  string `json:"token"`
+}
